@@ -11,40 +11,45 @@ library(dbplyr)
 usa <- map_data('usa')
 state <- map_data("state")
 Sd <- read_csv(here("most-recent-cohorts-all-data-elements-1.csv"))
+Dictionary <- read_excel("CollegeScorecardDataDictionary.xlsx", sheet=4) 
 sd1 <- filter(Sd, HIGHDEG >= 4)
 sd2 <-  summarise(sd1, STABBR, C150_4_POOLED)
 sd5 <- filter(sd2, C150_4_POOLED >= 0)
 sd2 %>% drop_na()
 
-#option 1 
-Filter(Negate(is.null), sd2[2])
+st.codes<-sd.frame(
+  state=as.factor(c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
+                    "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+                    "MI", "MN", "MO", "MS",  "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
+                    "NV", "NY", "OH", "OK", "OR", "PA", "PR", "RI", "SC", "SD", "TN",
+                    "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")),
+  full=as.factor(c("alaska","alabama","arkansas","arizona","california","colorado",
+                   "connecticut","district of columbia","delaware","florida","georgia",
+                   "hawaii","iowa","idaho","illinois","indiana","kansas","kentucky",
+                   "louisiana","massachusetts","maryland","maine","michigan","minnesota",
+                   "missouri","mississippi","montana","north carolina","north dakota",
+                   "nebraska","new hampshire","new jersey","new mexico","nevada",
+                   "new york","ohio","oklahoma","oregon","pennsylvania","puerto rico",
+                   "rhode island","south carolina","south dakota","tennessee","texas",
+                   "utah","virginia","vermont","washington","wisconsin",
+                   "west virginia","wyoming"))
+)
 
-#or we can do this 
-sd2<-sd2[!sapply(sd2, is.null)] 
-sd2
+
+state1 <-data.frame(state=x)
+refac.x<-st.codes$full[match(st.x$state,st.codes$state)]
 
 
-sd2 <- mutate(sd2, C150_4_POOLED = case_when(C150_4_POOLED == NULL ~ 0)
+data <- sd %>% select(C150_4, STABBR) %>% 
+  mutate(C150_4 = as.numeric(C150_4))  %>%  group_by(STABBR)  %>% 
+  summarize(Percent_Completion = mean(C150_4, na.rm = TRUE)*100)
 
 
-sdd <- aggregate(sd2$C150_4_POOLED, by_list(sd2$STABBR), mean)
-
-sd2 %>% group_by(sd2$STABBR) %>% summarise(Mean_sales = mean(sd2$C150_4_POOLED))
-
-tbl2 <- sd2 %>% filter(!is.numeric(C150_4_POOLED))
-
-
-
-Rate1.mean <- with(sd2, ave(C150_4_POOLED, STABBR, FUN = function(x) mean(x, na.rm = TRUE)))
 
 sd2 %>%
   group_by(USA) %>%
   summarise_at(vars(-C150_4_POOLED), funs(mean(., na.rm=TRUE)))
 
-ggplot(data=usa, aes(x=long, y=lat, group=group)) + 
-  geom_polygon(fill='lightblue') + 
-  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
-        axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) + 
-  ggtitle('U.S. Map') + 
-  coord_fixed(1.3)
+ggplot(data = us_states, aes(x = long, y = lat, group = group, fill = Percent_Completion)) p + geom_polygon(color = "Grey", size = 0.1) + ggtitle(" Average Completion Rate for Students at Four-Year Institutions")
+
 
